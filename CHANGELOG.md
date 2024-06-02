@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.5.0](https://github.com/chu-shen/BangumiKomga/compare/v0.4.1...v0.5.0) (2024-06-02)
+
+
+### Features
+
+* 支持更新元数据时替换系列封面 ([02b853f](https://github.com/chu-shen/BangumiKomga/commit/02b853f88773f1e52c83f942219ba84fa310ed92))
+
+
+### Bug Fixes
+
+* 上传封面前先检测是否已有海报 ([ebc429c](https://github.com/chu-shen/BangumiKomga/commit/ebc429c8d1b4755d2fb0615be68578bbf69f803d))
+
+
+### Performance Improvements
+
+* 调整代码，改为使用 Session ([5292861](https://github.com/chu-shen/BangumiKomga/commit/529286169a6ceb4f564eb248ec706f9aba204fc5))
+
+
+### Documentation
+
+* 添加 Komga 缩略图说明 ([a4b31d7](https://github.com/chu-shen/BangumiKomga/commit/a4b31d7b7b5b70ae2cd3d24797aa394bef3ea70a))
+
 ## [0.4.1](https://github.com/chu-shen/BangumiKomga/compare/v0.4.0...v0.4.1) (2024-06-01)
 
 
