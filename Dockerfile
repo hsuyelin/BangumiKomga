@@ -6,7 +6,7 @@ RUN mkdir -p /tmp/build-base
 COPY requirements.txt package_list.txt /tmp/build-base
 
 # 安装必要的环境
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev openssl-dev coreutils \
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev openssl-dev coreutils sqlite-dev \
     && apk add --no-cache $(cat /tmp/build-base/package_list.txt) \
     && pip install -r /tmp/build-base/requirements.txt \
     && apk del --purge .build-deps \
