@@ -6,10 +6,8 @@ RUN mkdir -p /tmp/build-base
 COPY requirements.txt package_list.txt /tmp/build-base
 
 # 安装必要的环境
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev openssl-dev coreutils \
-    && apk add --no-cache $(cat /tmp/build-base/package_list.txt) \
+RUN apk add --no-cache $(cat /tmp/build-base/package_list.txt) \
     && pip install -r /tmp/build-base/requirements.txt \
-    && apk del --purge .build-deps \
     && rm -rf /tmp/* /root/.cache /var/cache/apk/*
 
 # 设置时区为Asia/Shanghai, DOCKER_MODE为1
