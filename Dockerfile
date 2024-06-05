@@ -31,7 +31,7 @@ COPY . .
 VOLUME ["/app/config"]
 
 # 定义容器启动时执行的默认命令
-ENTRYPOINT ["sh", "-c"]
+RUN ln -sf /dev/stdout /app/refreshMetadata.log
 
 # 设置默认的CMD为refreshMetadata.py，这样在容器启动时会自动执行refreshMetadata.py
-CMD ["python refreshMetadata.py > /app/refreshMetadata.log 2>&1"]
+CMD ["python3", "refreshMetadata.py"]
