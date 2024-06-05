@@ -25,7 +25,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ${{ secrets.DOCKER_USERNAME }}/BangumiKomga
+            ${{ secrets.DOCKER_USERNAME }}/bangumikomga
           tags: |
             type=raw,value=${{ env.app_version }}
             type=raw,value=latest
