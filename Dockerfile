@@ -30,8 +30,5 @@ COPY . .
 # 定义一个卷，以便在运行时挂载主机目录到容器内的 /app/config
 VOLUME ["/app/config"]
 
-# 定义容器启动时执行的默认命令
-RUN ln -sf /dev/stdout /app/refreshMetadata.log
-
 # 设置默认的CMD为refreshMetadata.py，这样在容器启动时会自动执行refreshMetadata.py
 CMD ["python3", "refreshMetadata.py"]
