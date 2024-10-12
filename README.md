@@ -97,11 +97,12 @@ Executing this program will result in the loss of old metadata for series and bo
         Tips: 可以搭配`同步阅读进度`实现仅同步部分书籍系列的进度
     
 
-3. Run the script using `python refreshMetadata.py`
+3. Run the script using `python refreshMetadata.py`, or `docker start bangumikomga`
 
 **Tips:**
 
-如果漫画系列数量上千，请考虑使用[bangumi/Archive](https://github.com/bangumi/Archive)离线数据代替联网查询
+- 如果漫画系列数量上千，请考虑使用[bangumi/Archive](https://github.com/bangumi/Archive)离线数据代替联网查询
+- 可以搭配工具定时执行，比如[ofelia](https://github.com/mcuadros/ofelia)
 
 ## 消息通知（可选）
 
