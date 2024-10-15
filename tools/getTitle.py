@@ -73,21 +73,30 @@ def check_word(word, corpus, vocabulary):
         return None
 
 
-def get_title(title):
-    '''
-    Get the first word from a title that is not in the corpus or vocabulary
-    '''
-    # Load the corpus and vocabulary
-    corpus = read_corpus("corpus/Japanese_Names_Corpus（18W）.txt") + \
+
+class ParseTitle:  
+    def __init__(self):  
+        self.corpus = []  
+        self.vocabulary = set()  
+        self.load_resources()  
+
+    def load_resources(self): 
+        # Load the corpus and vocabulary 
+        self.corpus = read_corpus("corpus/Japanese_Names_Corpus（18W）.txt") + \
         read_corpus("corpus/bangumi_person.txt")
-    vocabulary = build_vocabulary(
+        self.vocabulary = build_vocabulary(
         ["comic", "comics", "artbook", "artbooks", "汉化", "全彩版", "青文"])
-    # Iterate through the words in the title
-    for word in split_words(title):
-        # convert to lowercase
-        word = remove_punctuation(word).lower()
-        # Check the word against the corpus and vocabulary
-        result = check_word(word, corpus, vocabulary)
-        # Return the word if it is not in the corpus or vocabulary
-        if result is None:
-            return word
+
+    def get_title(self, title):  
+        '''
+        Get the first word from a title that is not in the corpus or vocabulary
+        '''
+        # Iterate through the words in the title
+        for word in split_words(title):
+            # convert to lowercase
+            word = remove_punctuation(word).lower()
+            # Check the word against the corpus and vocabulary
+            result = check_word(word, self.corpus, self.vocabulary)
+            # Return the word if it is not in the corpus or vocabulary
+            if result is None:
+                return word
