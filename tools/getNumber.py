@@ -4,6 +4,7 @@ class NumberType:
     VOLUME='volume'
     CHAPTER='chapter'
     NORMAL='normal'
+    NONE='none'
     
 
 def getNumberWithPrefix(s):
@@ -12,10 +13,10 @@ def getNumberWithPrefix(s):
 
     if match:  
         if match.group(1):
-            return (match.group(1), NumberType.VOLUME)
+            return (float(match.group(1)), NumberType.VOLUME)
         elif match.group(2):
-            return (match.group(2), NumberType.CHAPTER) 
-    return [], None
+            return (float(match.group(2)), NumberType.CHAPTER) 
+    return 1.0, NumberType.NONE
 
 
 def normal(s):
@@ -27,9 +28,11 @@ def normal(s):
     if not match:
         int_pattern = r"\d+|[一二三四五六七八九十]+|[①-⑩]+"
         match = re.findall(int_pattern, s)
-    
-    # 默认取最后一个数字
-    return match[-1], NumberType.NORMAL
+
+    if match[-1]:
+        return float(match[-1]), NumberType.NORMAL
+    return  1.0, NumberType.NONE
+        
 
 
 def formatString(s):
@@ -41,8 +44,8 @@ def getNumber(s):
     
     s=formatString(s)
     
-    numbers,type=getNumberWithPrefix(s)
-    if not numbers:
-        numbers,type=normal(s)
+    number,type=getNumberWithPrefix(s)
+    if not number:
+        number,type=normal(s)
 
-    return numbers,type
+    return number,type

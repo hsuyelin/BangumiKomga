@@ -199,23 +199,17 @@ def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh
             # Get the number for each related subject by finding the last number in the name or name_cn field
             subjects_numbers = []
             for subject in related_subjects:
-                numbers,_ = getNumber(subject['name'] + subject['name_cn'])
+                number,_ = getNumber(subject['name'] + subject['name_cn'])
                 try:
-                    subjects_numbers.append(
-                        float(numbers) if numbers else 1.0)
+                    subjects_numbers.append(number)
                 except ValueError:
                     logger.error("Failed to extract number: " + book_id + ", " +
                                  subject['name'] + ", " + subject['name_cn'])
 
         # get nunmber from book name
-        try:
-            book_number, number_type=getNumber(book_name)
-            book_number = float(book_number) if book_number else 1.0
-        except:
-            book_number = 1.0
-            number_type=NumberType.NORMAL
+        book_number, number_type=getNumber(book_name)
         ep_flag = True
-        if number_type is not NumberType.CHAPTER:
+        if number_type is not NumberType.CHAPTER or NumberType.NONE:
             # Update the metadata for the book if its number matches a related subject number
             for i, number in enumerate(subjects_numbers):
                 if book_number == number:
