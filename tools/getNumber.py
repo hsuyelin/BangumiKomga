@@ -16,7 +16,7 @@ def getNumberWithPrefix(s):
             return (float(match.group(1)), NumberType.VOLUME)
         elif match.group(2):
             return (float(match.group(2)), NumberType.CHAPTER) 
-    return 1.0, NumberType.NONE
+    return None, NumberType.NONE
 
 
 def normal(s):
@@ -29,9 +29,9 @@ def normal(s):
         int_pattern = r"\d+|[一二三四五六七八九十]+|[①-⑩]+"
         match = re.findall(int_pattern, s)
 
-    if match[-1]:
+    if match:
         return float(match[-1]), NumberType.NORMAL
-    return  1.0, NumberType.NONE
+    return  None, NumberType.NONE
         
 
 

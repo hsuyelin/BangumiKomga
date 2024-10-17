@@ -209,7 +209,7 @@ def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh
         # get nunmber from book name
         book_number, number_type=getNumber(book_name)
         ep_flag = True
-        if number_type is not NumberType.CHAPTER or NumberType.NONE:
+        if number_type not in (NumberType.CHAPTER , NumberType.NONE):
             # Update the metadata for the book if its number matches a related subject number
             for i, number in enumerate(subjects_numbers):
                 if book_number == number:
