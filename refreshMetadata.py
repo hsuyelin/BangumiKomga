@@ -8,7 +8,7 @@ from tools.notification import send_notification
 from tools.db import initSqlite3, record_series_status, record_book_status
 
 
-def refresh_metadata(force_refresh_list=[]):
+def refresh_metadata():
     '''
     刷新书籍系列元数据
     '''
@@ -40,36 +40,35 @@ def refresh_metadata(force_refresh_list=[]):
         series_id = series['id']
         series_name = series['name']
 
-        force_refresh_flag = series_id in force_refresh_list
-        # Skip the series if it's not in the force refresh list
-        if len(force_refresh_list) > 0 and not force_refresh_flag:
-            continue
-        # 找到对应的series_record
-        series_record = next(
-            (record for record in series_records if record[0] == series_id), None)
-        # series_record=c.execute("SELECT * FROM refreshed_series WHERE series_id=?", (series_id,)).fetchone()
-        # Check if the series has already been refreshed
-        if series_record and not force_refresh_flag:
-            if series_record[2] == 1:
-                subject_id = cursor.execute(
-                    "SELECT subject_id FROM refreshed_series WHERE series_id=?", (series_id,)).fetchone()[0]
-                refresh_book_metadata(bgm, komga, subject_id,
-                                      series_id, conn, force_refresh_flag)
-                continue
-
-            # recheck or skip failed series
-            elif series_record[2] == 0 and not RECHECK_FAILED_SERIES:
-                logger.debug("skip falied series: "+series_name)
-                continue
-
         # Get the subject id from the Correct Bgm Link (CBL) if it exists
         subject_id = None
+        force_refresh_flag=False
         for link in series['metadata']['links']:
             if link['label'].lower() == "cbl":
                 subject_id = link['url'].split("/")[-1]
                 # Get the metadata for the series from bangumi
                 metadata = bgm.get_subject_metadata(subject_id)
+                force_refresh_flag=True
                 break
+
+        if not force_refresh_flag:
+            # 找到对应的series_record
+            series_record = next(
+                (record for record in series_records if record[0] == series_id), None)
+            # series_record=c.execute("SELECT * FROM refreshed_series WHERE series_id=?", (series_id,)).fetchone()
+            # Check if the series has already been refreshed
+            if series_record:
+                if series_record[2] == 1:
+                    subject_id = cursor.execute(
+                        "SELECT subject_id FROM refreshed_series WHERE series_id=?", (series_id,)).fetchone()[0]
+                    refresh_book_metadata(bgm, komga, subject_id,
+                                        series_id, conn, force_refresh_flag)
+                    continue
+
+                # recheck or skip failed series
+                elif series_record[2] == 0 and not RECHECK_FAILED_SERIES:
+                    logger.debug("skip falied series: "+series_name)
+                    continue
 
         # Use the bangumi API to search for the series by title on komga
         if subject_id == None:
@@ -273,4 +272,4 @@ def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh
                 conn, book_id, None, 0, book_name, "Only update book number")
 
 
-refresh_metadata(FORCE_REFRESH_LIST)
+refresh_metadata()

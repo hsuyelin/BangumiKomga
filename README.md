@@ -52,6 +52,7 @@ This metadata then gets converted to be compatible to Komga and then gets sent t
 - [ ] 提高 Bangumi 搜索结果匹配准确率，如：排序、评分
 - [ ] 更新 Komga 封面时，判断：类型（'GENERATED'）、大小
 - [ ] 重构元数据更新范围及覆盖逻辑
+- [ ] 增强文件名解析
 
 
 ## Requirements
@@ -149,7 +150,7 @@ Executing this program will result in the loss of old metadata for series and bo
 
 ## 如何修正错误元数据
 
-人工修正错误元数据可以使用`cbl(Correct Bangumi Link)`，只需在系列元数据的链接中填入`cbl`和该漫画系列的 bangumi 地址。此链接将在匹配时最先使用。
+人工修正错误元数据可以使用`cbl(Correct Bangumi Link)`，只需在系列元数据的链接中填入`cbl`和该漫画系列的 bangumi 地址。将强制使用此链接，不再进行刮削。
 
 下面分三种情况说明具体操作：
 
@@ -159,12 +160,13 @@ Executing this program will result in the loss of old metadata for series and bo
 
 - 系列元数据更新失败，即「标题」与「排序标题」**一样**：
     - 填入上面提到的信息
-    - 将`RECHECK_FAILED_SERIES`配置为`True`，重新匹配失败的系列
+    - 如果未填写，也可以尝试使用最新版本重新匹配之前失败的系列
+      - 只需将`RECHECK_FAILED_SERIES`配置为`True`，重新匹配失败的系列；将`RECHECK_FAILED_BOOKS`配置为`True`，重新匹配失败的单行本
     - 正常执行`python refreshMetadata.py`
 
-- 系列元数据更新错误，即匹配错误：
+- 系列元数据更新错误，即匹配错误，刮削成其他条目：
     - 填入上面提到的信息
-    - 将此系列的 id 添加到`FORCE_REFRESH_LIST`，强制刷新此系列所有元数据。id 可在 komga 界面点击书籍系列（对应链接）获得，形如：`'0B79XX3NP97K9'`。填写时以英文引号`''`包裹，英文逗号`,`分割。
+    - 不再需要记录 id，`FORCE_REFRESH_LIST`配置已被删除
     - 正常执行`python refreshMetadata.py`
 
 
