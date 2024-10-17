@@ -73,8 +73,7 @@ Executing this program will result in the loss of old metadata for series and bo
 1. Install the requirements using
     ```shell
     # prepare the environment on your own
-    conda install --file env_conda.txt
-    pip install -r env_pip.txt
+    pip3 install -r install/requirements.txt
 
     # or use docker compose
     version: '3'
