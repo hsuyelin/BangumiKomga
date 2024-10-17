@@ -26,7 +26,7 @@ def normal(s):
     match = re.findall(decimal_pattern, s)
     # If no decimal numbers are found, change the pattern to match integer numbers
     if not match:
-        int_pattern = r"\d+|[一二三四五六七八九十]+|[①-⑩]+"
+        int_pattern = r"\d+"
         match = re.findall(int_pattern, s)
 
     if match:
