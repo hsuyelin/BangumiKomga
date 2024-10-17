@@ -1,2 +1,2 @@
 zhconv
-levenshtein
+thefuzz
