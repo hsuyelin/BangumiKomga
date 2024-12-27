@@ -8,17 +8,16 @@ from tools.notification import send_notification
 from tools.db import initSqlite3, record_series_status, record_book_status
 
 
+env = InitEnv()
+bgm = env.bgm
+komga = env.komga
+cursor, conn = initSqlite3()
+
 def refresh_metadata():
     '''
     刷新书籍系列元数据
     '''
-    env = InitEnv()
-
-    bgm = env.bgm
-    komga = env.komga
     all_series = env.all_series
-
-    cursor, conn = initSqlite3()
     
     parse_title=ParseTitle()
 
@@ -61,8 +60,7 @@ def refresh_metadata():
                 if series_record[2] == 1:
                     subject_id = cursor.execute(
                         "SELECT subject_id FROM refreshed_series WHERE series_id=?", (series_id,)).fetchone()[0]
-                    refresh_book_metadata(bgm, komga, subject_id,
-                                        series_id, conn, force_refresh_flag)
+                    refresh_book_metadata(subject_id,series_id, force_refresh_flag)
                     continue
 
                 # recheck or skip failed series
@@ -131,8 +129,7 @@ def refresh_metadata():
             failed_series_ids.append(series_id)
             continue
 
-        refresh_book_metadata(bgm, komga, subject_id,
-                              series_id, conn, force_refresh_flag)
+        refresh_book_metadata(subject_id,series_id, force_refresh_flag)
 
     # Add the series that failed to obtain metadata to the collection
     if CREATE_FAILED_COLLECTION and failed_series_ids:
@@ -151,8 +148,50 @@ def refresh_metadata():
 
 
 
+def update_book_metadata(book_id, related_subject, book_name,number):
+    # Get the metadata for the book from bangumi
+    book_metadata = processMetadata.setKomangaBookMetadata(
+        related_subject['id'], number, book_name, bgm)
+    if(book_metadata.isvalid == False):
+        record_book_status(
+            conn, book_id, related_subject['id'], 0, book_name, "metadata invalid")
+        return
 
-def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh_flag):
+    book_data = {
+        "authors": book_metadata.authors,
+        "summary": book_metadata.summary,
+        "tags": book_metadata.tags,
+        "title": book_metadata.title,
+        "isbn": book_metadata.isbn,
+        "number": book_metadata.number,
+        "links": book_metadata.links,
+        "releaseDate": book_metadata.releaseDate,
+        "numberSort": book_metadata.numberSort
+    }
+
+    # Update the metadata for the series on komga
+    is_success = komga.update_book_metadata(
+        book_id, book_data)
+    if(is_success):
+        record_book_status(
+            conn, book_id, related_subject['id'], 1, book_name, "")
+        
+        # 使用 Bangumi 图片替换原封面
+        # 确保没有上传过海报，避免重复上传，排除 komga 生成的封面
+        if USE_BANGUMI_THUMBNAIL_FOR_BOOK and len(komga.get_book_thumbnails(book_id)) == 1:
+            thumbnail=bgm.get_subject_thumbnail(related_subject)
+            replace_thumbnail_result=komga.update_book_thumbnail(book_id, thumbnail)
+            if replace_thumbnail_result:
+                logger.debug("replace thumbnail for book: "+book_name)
+            else:
+                logger.error("Failed to replace thumbnail for book: "+book_name)
+    else:
+        record_book_status(
+            conn, book_id, related_subject['id'], 0, book_name, "komga update failed")
+
+
+
+def refresh_book_metadata(subject_id, series_id, force_refresh_flag):
     '''
     刷新书元数据
     '''
@@ -177,6 +216,14 @@ def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh
     for book in books['content']:
         book_id = book['id']
         book_name = book['name']
+        
+        # Get the subject id from the Correct Bgm Link (CBL) if it exists
+        for link in book['metadata']['links']:
+            if link['label'].lower() == "cbl":
+                cbl_subject=bgm.get_subject_metadata(link['url'].split("/")[-1])
+                number,_ = getNumber(cbl_subject['name'] + cbl_subject['name_cn'])
+                update_book_metadata(book_id, cbl_subject, book_name,number)
+                break
 
         # 找到对应的book_record
         book_record = next(
@@ -214,45 +261,9 @@ def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh
             for i, number in enumerate(subjects_numbers):
                 if book_number == number:
                     ep_flag = False
-                    # Get the metadata for the book from bangumi
-                    book_metadata = processMetadata.setKomangaBookMetadata(
-                        related_subjects[i]['id'], number, book_name, bgm)
-                    if(book_metadata.isvalid == False):
-                        record_book_status(
-                            conn, book_id, related_subjects[i]['id'], 0, book_name, "metadata invalid")
-                        break
-
-                    book_data = {
-                        "authors": book_metadata.authors,
-                        "summary": book_metadata.summary,
-                        "tags": book_metadata.tags,
-                        "title": book_metadata.title,
-                        "isbn": book_metadata.isbn,
-                        "number": book_metadata.number,
-                        "links": book_metadata.links,
-                        "releaseDate": book_metadata.releaseDate,
-                        "numberSort": book_metadata.numberSort
-                    }
-
-                    # Update the metadata for the series on komga
-                    is_success = komga.update_book_metadata(
-                        book_id, book_data)
-                    if(is_success):
-                        record_book_status(
-                            conn, book_id, related_subjects[i]['id'], 1, book_name, "")
-                        
-                        # 使用 Bangumi 图片替换原封面
-                        # 确保没有上传过海报，避免重复上传，排除 komga 生成的封面
-                        if USE_BANGUMI_THUMBNAIL_FOR_BOOK and len(komga.get_book_thumbnails(book_id)) == 1:
-                            thumbnail=bgm.get_subject_thumbnail(related_subjects[i])
-                            replace_thumbnail_result=komga.update_book_thumbnail(book_id, thumbnail)
-                            if replace_thumbnail_result:
-                                logger.debug("replace thumbnail for book: "+book_name)
-                            else:
-                                logger.error("Failed to replace thumbnail for book: "+book_name)
-                    else:
-                        record_book_status(
-                            conn, book_id, related_subjects[i]['id'], 0, book_name, "komga update failed")
+                    
+                    update_book_metadata(book_id, related_subjects[i], book_name,number)
+                    
                     break
         # 修正`话`序号
         if ep_flag:
