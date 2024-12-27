@@ -18,6 +18,42 @@ def getNumberWithPrefix(s):
             return (float(match.group(2)), NumberType.CHAPTER) 
     return None, NumberType.NONE
 
+def roman_to_integer(s):  
+    roman_numerals = {  
+        'I': 1,  
+        'V': 5,  
+        'X': 10,  
+        'L': 50,  
+        'C': 100,  
+        'D': 500,  
+        'M': 1000  
+    }  
+    
+    total = 0  
+    prev_value = 0  
+    
+    for char in reversed(s):  # 从右到左遍历字符  
+        current_value = roman_numerals[char]  
+        
+        if current_value < prev_value:  
+            total -= current_value  # 如果小于前一个值则减去  
+        else:  
+            total += current_value  # 否则加上  
+        
+        prev_value = current_value  
+    
+    return total  
+
+def getRomanNumber(s):
+    roman_pattern = r'[IVXLCDM]+'  
+    match = re.search(roman_pattern, s, re.IGNORECASE)  
+    
+    if match:
+        roman_numeral = match.group(0)
+        return roman_to_integer(roman_numeral.upper()), NumberType.NORMAL
+    else:  
+        return None, NumberType.NONE
+
 
 def normal(s):
     # Define the pattern to match decimal numbers in the format of "xx.xx"
@@ -43,9 +79,16 @@ def formatString(s):
 def getNumber(s):
     
     s=formatString(s)
-    
-    number,type=getNumberWithPrefix(s)
-    if not number:
-        number,type=normal(s)
 
-    return number,type
+    parsers = [  
+        getNumberWithPrefix,  
+        getRomanNumber,  
+        normal  
+    ]  
+    
+    for parser in parsers:  
+        number, type = parser(s)  
+        if number:
+            return number, type  
+
+    return None, NumberType.NONE
