@@ -45,7 +45,8 @@ def roman_to_integer(s):
     return total  
 
 def getRomanNumber(s):
-    roman_pattern = r'[IVXLCDM]+'  
+    # 罗马数字紧邻前后无英文字母
+    roman_pattern = r'(?<![A-Z])[IVXLCDM]+(?![A-Z])'  
     match = re.search(roman_pattern, s, re.IGNORECASE)  
     
     if match:
