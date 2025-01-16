@@ -95,7 +95,7 @@ This metadata then gets converted to be compatible to Komga and then gets sent t
         Tips: 可以搭配`同步阅读进度`实现仅同步部分书籍系列的进度
     
 
-3. Run the script using `python refreshMetadata.py`, or `docker start bangumikomga`
+3. Run the script using `python refreshMetadata.py`, or `docker start bangumikomga`(The container automatically closes after execution.)
 
 > [!TIP]
 > - 如果漫画系列数量上千，请考虑使用[bangumi/Archive](https://github.com/bangumi/Archive)离线数据代替联网查询
