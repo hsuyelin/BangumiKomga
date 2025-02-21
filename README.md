@@ -11,6 +11,7 @@
   - [创建失败收藏（可选）](#创建失败收藏可选)
   - [其他配置说明](#其他配置说明)
   - [如何修正错误元数据](#如何修正错误元数据)
+  - [为小说添加元数据](#为小说添加元数据)
   - [同步阅读进度](#同步阅读进度)
   - [命名建议](#命名建议)
   - [Issues \& Pull Requests](#issues--pull-requests)
@@ -34,19 +35,25 @@ This metadata then gets converted to be compatible to Komga and then gets sent t
 - [x] 漫画系列添加元数据
 - [x] 单册漫画添加元数据
 - [x] 自动跳过已刷新元数据的条目
-- [x] 优先使用手动配置的bangumi链接(cbl)
-- [x] 配置Bangumi登录
-- [x] 同步观看进度至Bangumi
+- [x] 系列及单册优先使用手动配置的 Bangumi 链接(cbl)
+- [x] 配置 Bangumi 登录
+- [x] 同步观看进度至 Bangumi
 - [x] 可选择处理范围：①所有书籍系列；②指定库的书籍系列；③指定收藏的书籍系列
 - [x] ~~区分单册和单话~~👉未匹配的书也会重新排序
 - [x] ~~添加同人志~~👉推荐使用[LANraragi](https://github.com/Difegue/LANraragi)
-- [x] 可使用 Bangumi 图片替换系列封面
+- [x] 可使用 Bangumi 图片替换系列、单册封面
 
 处理逻辑见[DESIGN](docs/DESIGN.md)
 
 ### TODO
 
 - [ ] 使用[bangumi/Archive](https://github.com/bangumi/Archive)离线数据代替联网查询
+- [ ] 限制联网查询频率
+- [ ] 提高 Bangumi 搜索结果匹配准确率，如：排序、评分
+- [ ] 更新 Komga 封面时，判断：类型（'GENERATED'）、大小
+- [ ] 重构元数据更新范围及覆盖逻辑
+- [ ] 增强文件名解析
+
 
 ## Requirements
 
@@ -56,18 +63,15 @@ This metadata then gets converted to be compatible to Komga and then gets sent t
 
 ## 快速开始
 
-**Warning:**
-
-Executing this program will result in the loss of old metadata for series and books
-
-执行此程序将导致书籍系列及单册的旧元数据丢失
+> [!WARNING] 
+> Executing this program will result in the loss of old metadata for series and books\
+> 执行此程序将导致书籍系列及单册的旧元数据丢失
 
 
 1. Install the requirements using
     ```shell
     # prepare the environment on your own
-    conda install --file env_conda.txt
-    pip install -r env_pip.txt
+    pip3 install -r install/requirements.txt
 
     # or use docker compose
     version: '3'
@@ -91,11 +95,11 @@ Executing this program will result in the loss of old metadata for series and bo
         Tips: 可以搭配`同步阅读进度`实现仅同步部分书籍系列的进度
     
 
-3. Run the script using `python refreshMetadata.py`
+3. Run the script using `python refreshMetadata.py`, or `docker start bangumikomga`(The container automatically closes after execution.)
 
-**Tips:**
-
-如果漫画系列数量上千，请考虑使用[bangumi/Archive](https://github.com/bangumi/Archive)离线数据代替联网查询
+> [!TIP]
+> - 如果漫画系列数量上千，请考虑使用[bangumi/Archive](https://github.com/bangumi/Archive)离线数据代替联网查询
+> - 可以搭配工具定时执行，比如[ofelia](https://github.com/mcuadros/ofelia)
 
 ## 消息通知（可选）
 
@@ -120,11 +124,9 @@ Executing this program will result in the loss of old metadata for series and bo
 
 每次运行都会根据**本次**运行数据重新创建此收藏（无失败则跳过）。
 
-**Tips:**
-
-- 在此收藏中按照[如何修正错误元数据](#如何修正错误元数据)操作，启用`RECHECK_FAILED_SERIES`，然后填入`cbl`~~治疗强迫症~~
-
-- 如果要将所有失败的系列都添加至收藏，则需要将`RECHECK_FAILED_SERIES`配置为`True`
+> [!TIP]
+> - 在此收藏中按照[如何修正错误元数据](#如何修正错误元数据)操作，启用`RECHECK_FAILED_SERIES`，然后填入`cbl`~~治疗强迫症~~
+> - 如果要将所有失败的系列都添加至收藏，则需要将`RECHECK_FAILED_SERIES`配置为`True`
 
 ## 其他配置说明
 
@@ -136,12 +138,13 @@ Executing this program will result in the loss of old metadata for series and bo
     - ~~意义不明的参数~~，建议设置为`False`，可缩短程序运行时间
     - 如果刷新书时，bangumi 数据不完整，则可以在数据补充后使用此参数修正此书元数据
 
-- `USE_BANGUMI_THUMBNAIL`: 设置为`True`时使用 Bangumi 封面替换 Komga 生成的缩略图（如果未曾上传过海报）
-    - 还可以通过调整`Komga 服务器设置->缩略图尺寸（默认 300px，超大 1200px）`来获得更清晰的封面
+- `USE_BANGUMI_THUMBNAIL`: 设置为`True`且未曾上传过系列海报时，使用 Bangumi 封面替换系列海报
+    - 旧海报为 Komga 生成的缩略图，因此还可以通过调整`Komga 服务器设置->缩略图尺寸（默认 300px，超大 1200px）`来获得更清晰的封面
+    - `USE_BANGUMI_THUMBNAIL_FOR_BOOK`: 设置为`True`且未曾上传过单册海报时，使用 Bangumi 封面替换单册海报
 
 ## 如何修正错误元数据
 
-人工修正错误元数据可以使用`cbl(Correct Bangumi Link)`，只需在系列元数据的链接中填入`cbl`和该漫画系列的 bangumi 地址。此链接将在匹配时最先使用。
+人工修正错误元数据可以使用`cbl(Correct Bangumi Link)`，只需在系列元数据的链接中填入`cbl`和该漫画系列的 bangumi 地址。将强制使用此链接，不再进行刮削。
 
 下面分三种情况说明具体操作：
 
@@ -151,21 +154,30 @@ Executing this program will result in the loss of old metadata for series and bo
 
 - 系列元数据更新失败，即「标题」与「排序标题」**一样**：
     - 填入上面提到的信息
-    - 将`RECHECK_FAILED_SERIES`配置为`True`，重新匹配失败的系列
+    - 如果未填写，也可以尝试使用最新版本重新匹配之前失败的系列
+      - 只需将`RECHECK_FAILED_SERIES`配置为`True`，重新匹配失败的系列；将`RECHECK_FAILED_BOOKS`配置为`True`，重新匹配失败的单行本
     - 正常执行`python refreshMetadata.py`
 
-- 系列元数据更新错误，即匹配错误：
+- 系列元数据更新错误，即匹配错误，刮削成其他条目：
     - 填入上面提到的信息
-    - 将此系列的 id 添加到`FORCE_REFRESH_LIST`，强制刷新此系列所有元数据。id 可在 komga 界面点击书籍系列（对应链接）获得，形如：`'0B79XX3NP97K9'`。填写时以英文引号`''`包裹，英文逗号`,`分割。
+    - 不再需要记录 id，`FORCE_REFRESH_LIST`配置已被删除
     - 正常执行`python refreshMetadata.py`
+
+
+## 为小说添加元数据
+
+Komga 并没有区分漫画与小说。
+
+可以尝试修改代码，使其**只应用**于 Komga 的**小说库**：将`bangumiApi.py`中的`manga_metadata["platform"] != "小说"`修改为`manga_metadata["platform"] == "小说"`
+
 
 ## 同步阅读进度
 
-_注意：当前仅为komga至bangumi单向同步_
+> [!WARNING]
+> _注意：当前仅为komga至bangumi单向同步，此功能未维护_
 
-**Tips:**
-
-推荐使用Tachiyomi更新阅读进度👉[Tracking | Tachiyomi](https://tachiyomi.org/help/guides/tracking/#what-is-tracking)
+> [!TIP]
+> 推荐使用Tachiyomi更新阅读进度👉[Tracking | Tachiyomi](https://tachiyomi.org/help/guides/tracking/#what-is-tracking)
 
 **同步内容：**
 - 仅同步卷数，不同步话数
@@ -174,8 +186,7 @@ _注意：当前仅为komga至bangumi单向同步_
 2. 步骤同`刷新元数据`
 
     注意：
-    - 如果配置了`FORCE_REFRESH_LIST`，则仅同步此列表配置的漫画系列进度
-    - 如果未配置`FORCE_REFRESH_LIST`，则同步当前获取的**所有系列**的漫画进度（当前有3种范围：所有、仅指定库、仅指定收藏）。**为避免污染时间线，请谨慎操作**
+    - 同步当前获取的**所有系列**的漫画进度（当前有3种范围：所有、仅指定库、仅指定收藏）。**为避免污染时间线，请谨慎操作**
 3. `python updateReadProgress.py`
 
 ## 命名建议

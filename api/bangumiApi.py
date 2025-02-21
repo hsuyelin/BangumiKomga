@@ -6,7 +6,7 @@
 
 import requests
 from requests.adapters import HTTPAdapter
-from Levenshtein import distance
+from thefuzz import fuzz
 from tools.log import logger
 from zhconv import convert
 from urllib.parse import quote_plus
@@ -35,26 +35,24 @@ class BangumiApi:
         # https://next.bgm.tv/demo/access-token
         return
 
-    def compute_name_distance(self, name, name_cn, infobox, target):
+    def compute_name_score_by_fuzzy(self, name, name_cn, infobox, target):
         """
-        Computes the Levenshtein distance between name, name_cn, and infobox "别名" (if exists) and the target string.
-
-        #TODO 简繁转换后计算距离
+        Use fuzzy to computes the Levenshtein distance between name, name_cn, and infobox "别名" (if exists) and the target string.
         """
-        target_distance = distance(name, target)
+        score = fuzz.ratio(name, target)
         if name_cn:
-            target_distance = min(target_distance, distance(name_cn, target))
+            score = max(score, fuzz.ratio(name_cn, target))
         for item in infobox:
             if item["key"] == "别名":
                 if isinstance(item["value"], (list,)):  # 判断传入值是否为列表
                     for alias in item["value"]:
-                        target_distance = min(
-                            target_distance, distance(alias["v"], target))
+                        score = max(
+                            score, fuzz.ratio(alias["v"], target))
                 else:
-                    target_distance = min(
-                        target_distance, distance(item["value"], target))
-        return target_distance
-
+                    score = max(
+                        score, fuzz.ratio(item["value"], target))
+        return score
+        
     def search_subjects(self, query):
         '''
         获取搜索结果，并移除非漫画系列。返回具有完整元数据的条目
@@ -104,8 +102,8 @@ class BangumiApi:
                 if single_flag:
                     sort_results.append(manga_metadata)
 
-        sort_results.sort(key=lambda x: self.compute_name_distance(
-            x["name"], x.get("name_cn", ""), x['infobox'], query))
+        sort_results.sort(key=lambda x: self.compute_name_score_by_fuzzy(
+            x["name"], x.get("name_cn", ""), x['infobox'], query),reverse=True)
 
         return sort_results
 

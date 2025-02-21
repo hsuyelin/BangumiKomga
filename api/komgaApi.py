@@ -116,6 +116,22 @@ class KomgaApi:
         # return the response as a JSON object
         return response.json()
 
+    
+    def get_book_thumbnails(self, book_id):
+        '''
+        Retrieves all thumbnails in a specified book in the komga comic.
+        '''
+        try:
+            # make a GET request to the URL to retrieve all thumbnails in a given series
+            response = self.r.get(
+                f'{self.base_url}/books/{book_id}/thumbnails')
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"An error occurred: {e}")
+            return []
+        # return the response as a JSON object
+        return response.json()
+
     def update_series_metadata(self, series_id, metadata):
         '''
         Updates the metadata of a specified comic series.
@@ -159,6 +175,21 @@ class KomgaApi:
             logger.error(f"An error occurred: {e}")
         # return True if the status code indicates success, False otherwise
         return response.status_code == 204
+    
+    
+    def update_book_thumbnail(self, book_id, thumbnail):
+        '''
+        Updates the thumbnail of a specified comic book.
+        '''
+        try:
+            # make a POST request to the URL to update the thumbnail for a given series
+            response = self.r.post(
+                f'{self.base_url}/books/{book_id}/thumbnails?selected=true', files=thumbnail)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"An error occurred: {e}")
+        # return True if the status code indicates success, False otherwise
+        return response.status_code == 200
     
     def add_collection(self, name, ordered, seriesIds):
         '''

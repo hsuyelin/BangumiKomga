@@ -1,25 +1,25 @@
-
-import re
-from tools.getTitle import get_title
+from tools.getTitle import ParseTitle
 import processMetadata
 from time import strftime, localtime
+from tools.getNumber import getNumber,NumberType
 from tools.env import *
 from tools.log import logger
 from tools.notification import send_notification
 from tools.db import initSqlite3, record_series_status, record_book_status
 
 
-def refresh_metadata(force_refresh_list=[]):
+env = InitEnv()
+bgm = env.bgm
+komga = env.komga
+cursor, conn = initSqlite3()
+
+def refresh_metadata():
     '''
     刷新书籍系列元数据
     '''
-    env = InitEnv()
-
-    bgm = env.bgm
-    komga = env.komga
     all_series = env.all_series
-
-    cursor, conn = initSqlite3()
+    
+    parse_title=ParseTitle()
 
     # 批量获取所有series_id
     series_ids = [series['id'] for series in all_series]
@@ -39,40 +39,38 @@ def refresh_metadata(force_refresh_list=[]):
         series_id = series['id']
         series_name = series['name']
 
-        force_refresh_flag = series_id in force_refresh_list
-        # Skip the series if it's not in the force refresh list
-        if len(force_refresh_list) > 0 and not force_refresh_flag:
-            continue
-        # 找到对应的series_record
-        series_record = next(
-            (record for record in series_records if record[0] == series_id), None)
-        # series_record=c.execute("SELECT * FROM refreshed_series WHERE series_id=?", (series_id,)).fetchone()
-        # Check if the series has already been refreshed
-        if series_record and not force_refresh_flag:
-            if series_record[2] == 1:
-                subject_id = cursor.execute(
-                    "SELECT subject_id FROM refreshed_series WHERE series_id=?", (series_id,)).fetchone()[0]
-                refresh_book_metadata(bgm, komga, subject_id,
-                                      series_id, conn, force_refresh_flag)
-                continue
-
-            # recheck or skip failed series
-            elif series_record[2] == 0 and not RECHECK_FAILED_SERIES:
-                logger.debug("skip falied series: "+series_name)
-                continue
-
         # Get the subject id from the Correct Bgm Link (CBL) if it exists
         subject_id = None
+        force_refresh_flag=False
         for link in series['metadata']['links']:
             if link['label'].lower() == "cbl":
                 subject_id = link['url'].split("/")[-1]
                 # Get the metadata for the series from bangumi
                 metadata = bgm.get_subject_metadata(subject_id)
+                force_refresh_flag=True
                 break
+
+        if not force_refresh_flag:
+            # 找到对应的series_record
+            series_record = next(
+                (record for record in series_records if record[0] == series_id), None)
+            # series_record=c.execute("SELECT * FROM refreshed_series WHERE series_id=?", (series_id,)).fetchone()
+            # Check if the series has already been refreshed
+            if series_record:
+                if series_record[2] == 1:
+                    subject_id = cursor.execute(
+                        "SELECT subject_id FROM refreshed_series WHERE series_id=?", (series_id,)).fetchone()[0]
+                    refresh_book_metadata(subject_id,series_id, force_refresh_flag)
+                    continue
+
+                # recheck or skip failed series
+                elif series_record[2] == 0 and not RECHECK_FAILED_SERIES:
+                    logger.debug("skip falied series: "+series_name)
+                    continue
 
         # Use the bangumi API to search for the series by title on komga
         if subject_id == None:
-            title = get_title(series_name)
+            title=parse_title.get_title(series_name)
             if title == None:
                 failed_count, failed_comic = record_series_status(
                     conn, series_id, subject_id, 0, series_name, "None", failed_count, failed_comic)
@@ -112,8 +110,8 @@ def refresh_metadata(force_refresh_list=[]):
         }
 
         # Update the metadata for the series on komga
-        isSuccessed = komga.update_series_metadata(series_id, series_data)
-        if(isSuccessed):
+        is_success = komga.update_series_metadata(series_id, series_data)
+        if(is_success):
             success_count, success_comic = record_series_status(
                 conn, series_id, subject_id, 1, series_name, komga_metadata.title, success_count, success_comic)
             # 使用 Bangumi 图片替换原封面
@@ -131,8 +129,7 @@ def refresh_metadata(force_refresh_list=[]):
             failed_series_ids.append(series_id)
             continue
 
-        refresh_book_metadata(bgm, komga, subject_id,
-                              series_id, conn, force_refresh_flag)
+        refresh_book_metadata(subject_id,series_id, force_refresh_flag)
 
     # Add the series that failed to obtain metadata to the collection
     if CREATE_FAILED_COLLECTION and failed_series_ids:
@@ -150,24 +147,51 @@ def refresh_metadata(force_refresh_list=[]):
                       strftime('%Y-%m-%d %H:%M:%S', localtime()))
 
 
-def getNumber(s):
-    # TODO 数字匹配，包括：I、一、1、①
-    # Define the pattern to match decimal numbers in the format of "xx.xx"
-    pattern = r"\d+\.\d"
-    # e.g. 16-5
-    s = s.replace('-', '.').replace('_', '.')
-    # Use the `re.findall` function to search for all occurrences of the pattern in the input string
-    numbers = re.findall(pattern, s)
-    # If no decimal numbers are found, change the pattern to match integer numbers
-    if not numbers:
-        pattern = r"\d+"
-        numbers = re.findall(pattern, s)
 
-    # Return the list of found numbers
-    return numbers
+def update_book_metadata(book_id, related_subject, book_name,number):
+    # Get the metadata for the book from bangumi
+    book_metadata = processMetadata.setKomangaBookMetadata(
+        related_subject['id'], number, book_name, bgm)
+    if(book_metadata.isvalid == False):
+        record_book_status(
+            conn, book_id, related_subject['id'], 0, book_name, "metadata invalid")
+        return
+
+    book_data = {
+        "authors": book_metadata.authors,
+        "summary": book_metadata.summary,
+        "tags": book_metadata.tags,
+        "title": book_metadata.title,
+        "isbn": book_metadata.isbn,
+        "number": book_metadata.number,
+        "links": book_metadata.links,
+        "releaseDate": book_metadata.releaseDate,
+        "numberSort": book_metadata.numberSort
+    }
+
+    # Update the metadata for the series on komga
+    is_success = komga.update_book_metadata(
+        book_id, book_data)
+    if(is_success):
+        record_book_status(
+            conn, book_id, related_subject['id'], 1, book_name, "")
+        
+        # 使用 Bangumi 图片替换原封面
+        # 确保没有上传过海报，避免重复上传，排除 komga 生成的封面
+        if USE_BANGUMI_THUMBNAIL_FOR_BOOK and len(komga.get_book_thumbnails(book_id)) == 1:
+            thumbnail=bgm.get_subject_thumbnail(related_subject)
+            replace_thumbnail_result=komga.update_book_thumbnail(book_id, thumbnail)
+            if replace_thumbnail_result:
+                logger.debug("replace thumbnail for book: "+book_name)
+            else:
+                logger.error("Failed to replace thumbnail for book: "+book_name)
+    else:
+        record_book_status(
+            conn, book_id, related_subject['id'], 0, book_name, "komga update failed")
 
 
-def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh_flag):
+
+def refresh_book_metadata(subject_id, series_id, force_refresh_flag):
     '''
     刷新书元数据
     '''
@@ -192,6 +216,14 @@ def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh
     for book in books['content']:
         book_id = book['id']
         book_name = book['name']
+        
+        # Get the subject id from the Correct Bgm Link (CBL) if it exists
+        for link in book['metadata']['links']:
+            if link['label'].lower() == "cbl":
+                cbl_subject=bgm.get_subject_metadata(link['url'].split("/")[-1])
+                number,_ = getNumber(cbl_subject['name'] + cbl_subject['name_cn'])
+                update_book_metadata(book_id, cbl_subject, book_name,number)
+                break
 
         # 找到对应的book_record
         book_record = next(
@@ -214,54 +246,25 @@ def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh
             # Get the number for each related subject by finding the last number in the name or name_cn field
             subjects_numbers = []
             for subject in related_subjects:
-                numbers = getNumber(subject['name'] + subject['name_cn'])
+                number,_ = getNumber(subject['name'] + subject['name_cn'])
                 try:
-                    subjects_numbers.append(
-                        float(numbers[-1]) if numbers else float(1))
+                    subjects_numbers.append(number)
                 except ValueError:
                     logger.error("Failed to extract number: " + book_id + ", " +
                                  subject['name'] + ", " + subject['name_cn'])
 
         # get nunmber from book name
-        try:
-            book_number = float(getNumber(book_name)[-1])
-        except:
-            book_number = float(1)
+        book_number, number_type=getNumber(book_name)
         ep_flag = True
-        # Update the metadata for the book if its number matches a related subject number
-        for i, number in enumerate(subjects_numbers):
-            if book_number == number:
-                ep_flag = False
-                # Get the metadata for the book from bangumi
-                book_metadata = processMetadata.setKomangaBookMetadata(
-                    related_subjects[i]['id'], number, book_name, bgm)
-                if(book_metadata.isvalid == False):
-                    record_book_status(
-                        conn, book_id, related_subjects[i]['id'], 0, book_name, "metadata invalid")
+        if number_type not in (NumberType.CHAPTER , NumberType.NONE):
+            # Update the metadata for the book if its number matches a related subject number
+            for i, number in enumerate(subjects_numbers):
+                if book_number == number:
+                    ep_flag = False
+                    
+                    update_book_metadata(book_id, related_subjects[i], book_name,number)
+                    
                     break
-
-                book_data = {
-                    "authors": book_metadata.authors,
-                    "summary": book_metadata.summary,
-                    "tags": book_metadata.tags,
-                    "title": book_metadata.title,
-                    "isbn": book_metadata.isbn,
-                    "number": book_metadata.number,
-                    "links": book_metadata.links,
-                    "releaseDate": book_metadata.releaseDate,
-                    "numberSort": book_metadata.numberSort
-                }
-
-                # Update the metadata for the series on komga
-                isSuccessed = komga.update_book_metadata(
-                    book_id, book_data)
-                if(isSuccessed):
-                    record_book_status(
-                        conn, book_id, related_subjects[i]['id'], 1, book_name, "")
-                else:
-                    record_book_status(
-                        conn, book_id, related_subjects[i]['id'], 0, book_name, "komga update failed")
-                break
         # 修正`话`序号
         if ep_flag:
             book_data = {
@@ -274,4 +277,4 @@ def refresh_book_metadata(bgm, komga, subject_id, series_id, conn, force_refresh
                 conn, book_id, None, 0, book_name, "Only update book number")
 
 
-refresh_metadata(FORCE_REFRESH_LIST)
+refresh_metadata()

@@ -1,5 +1,79 @@
 # Changelog
 
+## [0.9.1](https://github.com/chu-shen/BangumiKomga/compare/v0.9.0...v0.9.1) (2025-01-14)
+
+
+### Bug Fixes
+
+* 修正罗马数字匹配问题 ([35c8ef3](https://github.com/chu-shen/BangumiKomga/commit/35c8ef370ec2ad7aa8b0bb8fe974face95a293e8))
+
+## [0.9.0](https://github.com/chu-shen/BangumiKomga/compare/v0.8.3...v0.9.0) (2024-12-27)
+
+
+### Features
+
+* 单册匹配时支持罗马数字 ([2c2651b](https://github.com/chu-shen/BangumiKomga/commit/2c2651b9de220b271c5c3993bd094cf1b62d0351)), closes [#26](https://github.com/chu-shen/BangumiKomga/issues/26)
+* 单册支持 cbl ([96875a2](https://github.com/chu-shen/BangumiKomga/commit/96875a2b19c3203df4e5239fb2317e3222f589d6))
+
+
+### Bug Fixes
+
+* 移除同步阅读进度中的`FORCE_REFRESH_LIST`配置 ([69ff03a](https://github.com/chu-shen/BangumiKomga/commit/69ff03ae76bc39a006844e829a2a58a15cd96c88))
+
+## [0.8.3](https://github.com/chu-shen/BangumiKomga/compare/v0.8.2...v0.8.3) (2024-10-17)
+
+
+### Bug Fixes
+
+* 修复获取序号逻辑 ([dbce1cc](https://github.com/chu-shen/BangumiKomga/commit/dbce1cca8197734b2b8def339bd15f07a3641fd4))
+* 移除中文数字匹配 ([5fbbd6e](https://github.com/chu-shen/BangumiKomga/commit/5fbbd6e6c18faaeb0696463373412db8c09703e2))
+
+## [0.8.2](https://github.com/chu-shen/BangumiKomga/compare/v0.8.1...v0.8.2) (2024-10-17)
+
+
+### Bug Fixes
+
+* 不刮削无序号单行本 ([08d47fe](https://github.com/chu-shen/BangumiKomga/commit/08d47fe42a79b2597b8f822450490d92b169a138))
+
+## [0.8.1](https://github.com/chu-shen/BangumiKomga/compare/v0.8.0...v0.8.1) (2024-10-17)
+
+
+### Documentation
+
+* update installation guide ([0fd61e0](https://github.com/chu-shen/BangumiKomga/commit/0fd61e0b2df6f6fb7cd7f23c18cf0ae07a937997))
+
+## [0.8.0](https://github.com/chu-shen/BangumiKomga/compare/v0.7.0...v0.8.0) (2024-10-17)
+
+
+### Features
+
+* Bangumi 匹配算法切换为 TheFuzz ([f89cd07](https://github.com/chu-shen/BangumiKomga/commit/f89cd07644946b90cab0e403d6086dcba3e69e21))
+* 优化刮削逻辑，移除`FORCE_REFRESH_LIST`配置 ([c497d30](https://github.com/chu-shen/BangumiKomga/commit/c497d3076b0645166e04b7bbfd1e5573e8ed6b18))
+
+## [0.7.0](https://github.com/chu-shen/BangumiKomga/compare/v0.6.0...v0.7.0) (2024-10-15)
+
+
+### Features
+
+* support get vol or chap number ([cba4e49](https://github.com/chu-shen/BangumiKomga/commit/cba4e495797f5e82e3f69e108740856d8a71c2e5))
+
+
+### Performance Improvements
+
+* 不再重复读取人名文件 ([f9bc723](https://github.com/chu-shen/BangumiKomga/commit/f9bc72345a3d411307b74be8b5553dfce52fd8a4))
+
+
+### Documentation
+
+* 完善 docker 说明 ([2604a9c](https://github.com/chu-shen/BangumiKomga/commit/2604a9c21b2d9313f808c6b0ada687b00d45f585))
+
+## [0.6.0](https://github.com/chu-shen/BangumiKomga/compare/v0.5.0...v0.6.0) (2024-07-01)
+
+
+### Features
+
+* 支持更新元数据时替换单册封面 ([d31a0b7](https://github.com/chu-shen/BangumiKomga/commit/d31a0b7fa6f5e05591c2ee6082026a28b1b25684))
+
 ## [0.5.0](https://github.com/chu-shen/BangumiKomga/compare/v0.4.1...v0.5.0) (2024-06-02)
 
 

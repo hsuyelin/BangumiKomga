@@ -3,7 +3,7 @@ from tools.env import *
 from tools.log import logger
 
 
-def update_read_progress(force_refresh_list=[]):
+def update_read_progress():
     '''
     更新阅读进度
     '''
@@ -14,10 +14,6 @@ def update_read_progress(force_refresh_list=[]):
 
     for series in all_series:
         series_name = series['name']
-        force_refresh_flag = series['id'] in force_refresh_list
-        # Skip the series if it's not in the force refresh list
-        if len(force_refresh_list) > 0 and not force_refresh_flag:
-            continue
 
         books_read_count = series['booksReadCount']
         try:
@@ -39,4 +35,4 @@ def update_read_progress(force_refresh_list=[]):
                          " series read progress: "+str(books_read_count))
 
 
-update_read_progress(FORCE_REFRESH_LIST)
+update_read_progress()
